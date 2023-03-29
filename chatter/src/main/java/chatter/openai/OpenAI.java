@@ -1,9 +1,13 @@
 package chatter.openai;
 
+import java.time.Duration;
+import java.time.temporal.ChronoUnit;
+
 import com.theokanning.openai.completion.chat.ChatCompletionRequest;
 import com.theokanning.openai.completion.chat.ChatMessage;
 import com.theokanning.openai.service.OpenAiService;
-import java.util.List;
+
+import chatter.persistence.ConversationRepository;
 
 public class OpenAI {
 
@@ -12,7 +16,7 @@ public class OpenAI {
     private static OpenAI singleton;
 
     private OpenAI(String key) {
-        this.openAiService = new OpenAiService(key);
+        this.openAiService = new OpenAiService(key, Duration.of(100, ChronoUnit.SECONDS));
     }
 
     public static OpenAI newOpenAI(String key) {
@@ -23,12 +27,15 @@ public class OpenAI {
     }
 
     public String chat(String message) {
+        ConversationRepository.addMessageToConversation(new ChatMessage("user", message));
         ChatCompletionRequest chatCompletionRequest = ChatCompletionRequest.builder()
-            .messages(List.of(new ChatMessage("user", message)))
+            .messages(ConversationRepository.getMessagesOfConversation())
             .model("gpt-3.5-turbo")
             .user("user")
             .build();
-        var result = openAiService.createChatCompletion(chatCompletionRequest);
+        var result = this.openAiService.createChatCompletion(chatCompletionRequest);
+        ConversationRepository.addMessageToConversation(result.getChoices().get(0).getMessage());
+
         return result.getChoices().get(0).getMessage().getContent();
     }
 }
