@@ -1,0 +1,15 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "speecher"
+authors = [
+    {name = "Lukas Hoehl", email = "lukas.hoehl@accso.de"},
+]
+description = "My package description"
+dynamic = ["version"]
+
+[project.scripts]
+speecher = "speecher:main"
+text-to-speech = "speech_parser.text_to_speech:main"
