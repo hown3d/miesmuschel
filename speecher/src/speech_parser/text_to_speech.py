@@ -1,19 +1,34 @@
 import io
+import logging
 import pathlib
 import sys
+import tempfile
+from typing import Optional
 
 import gtts.lang
 from gtts import gTTS
 
-from detect_language import detect_language
+from src.audio import convert
+from .detect_language import detect_language
 
 
-# Function to convert text to speech and save the output in WAV format
-def text_to_speech(input_text: str, lang: str) -> io.BytesIO:
+def text_to_speech(msg: str) -> Optional[str]:
+    detected_lang = detect_language(msg)
+    if detected_lang is None:
+        return None
+
+    print(f"detected language: {detected_lang.name}")
+    lang_code = detected_lang.iso_code_639_1.name.lower()
+    filepath = execute_tts(msg, lang_code)
+    return convert.convert_mp3_to_wave(filepath)
+
+
+def execute_tts(input_text: str, lang: str) -> str:
+    temp = tempfile.NamedTemporaryFile(suffix="tts.mp3", delete=False)
     tts = gTTS(input_text, lang=lang)
-    buf = io.BytesIO()
-    tts.write_to_fp(buf)
-    return buf
+    tts.write_to_fp(temp)
+    temp.close()
+    return temp.name
 
 
 def get_languages():
@@ -36,13 +51,10 @@ def usage() -> str:
 
 
 def main(text: str):
-    detected_lang = detect_language(text)
-    print(f"detected language: {detected_lang.name}")
-    lang_code = detected_lang.iso_code_639_1.name.lower()
-    tts_buf = text_to_speech(text, lang_code)
-    file_name = "hello.wav"
-    print(f"saving audio to {file_name}")
-    persist_tts(buf=tts_buf, filename=file_name)
+    tts_filepath = text_to_speech(text)
+    if tts_filepath is None:
+        logging.error("could not execute text to speech")
+    print(f"saving audio to {tts_filepath}")
 
 
 if __name__ == '__main__':

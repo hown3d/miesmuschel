@@ -3,3 +3,5 @@ gtts
 lingua-language-detector
 six==1.16.0
 whisper==1.1.10
+numpy<2.0.0
+pydub
